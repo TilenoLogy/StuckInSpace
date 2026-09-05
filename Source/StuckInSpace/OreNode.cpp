@@ -2,6 +2,9 @@
 
 
 #include "OreNode.h"
+#include "OreSpawnOutside.h"
+#include "Blueprint/UserWidget.h"
+#include "MyCharacter.h"
 
 // Sets default values
 AOreNode::AOreNode()
@@ -9,7 +12,6 @@ AOreNode::AOreNode()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-   
 
     Mesh =
         CreateDefaultSubobject<UStaticMeshComponent>(
@@ -75,44 +77,92 @@ void AOreNode::Damage_Implementation()
 
     Chips->Activate(true);
 
-    Health--;
 
+    AMyCharacter* MyCharacter = Cast<AMyCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 
-    UHealthBar* Widget = Cast<UHealthBar>(HealthWidget->GetUserWidgetObject());
+    if (MyCharacter && ToughnessLevel <= MyCharacter->Strength) {
 
-    if (Widget)
-    {
-        Widget->SetHealth(Health, MaxHealth, NodeName);
+        Health--;
+
     }
+    else {
+        UE_LOG(LogTemp, Warning, TEXT("Unable to break"));
 
-
-
-    UE_LOG(LogTemp, Warning, TEXT("Rock hit! Health: %d"), Health);
-
-
-    GetWorldTimerManager().ClearTimer(HideWidgetTimer);
-
-    GetWorldTimerManager().SetTimer(
-        HideWidgetTimer,
-        this,
-        &AOreNode::HideHealthWidget,
-        2.0f,
-        false);
-
-
-    if (Health <= 0)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Dropping Iron Ore"));
-
-        if (DropClass)
+        // If a widget class was assigned, create a temporary widget to notify the player
+        if (WidgetClass)
         {
-            GetWorld()->SpawnActor<AActor>(
-                DropClass,
-                GetActorLocation(),
-                GetActorRotation()
-            );
+            APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+            if (PC)
+            {
+                UUserWidget* TempWidget = CreateWidget<UUserWidget>(PC, WidgetClass);
+                if (TempWidget)
+                {
+                    TempWidget->AddToViewport();
+
+                    // Remove the temporary widget after 2 seconds
+                    TWeakObjectPtr<UUserWidget> WeakWidget(TempWidget);
+                    FTimerDelegate TimerDel;
+                    TimerDel.BindLambda([WeakWidget]() {
+                        if (WeakWidget.IsValid())
+                        {
+                            WeakWidget->RemoveFromParent();
+                        }
+                    });
+                    FTimerHandle TempWidgetHandle;
+                    GetWorldTimerManager().SetTimer(TempWidgetHandle, TimerDel, 2.0f, false);
+                }
+            }
+        }
+    }
+        UHealthBar* Widget = Cast<UHealthBar>(HealthWidget->GetUserWidgetObject());
+
+        if (Widget)
+        {
+            Widget->SetHealth(Health, MaxHealth, NodeName);
         }
 
-        Destroy();
+
+
+        UE_LOG(LogTemp, Warning, TEXT("Rock hit! Health: %d"), Health);
+
+
+        GetWorldTimerManager().ClearTimer(HideWidgetTimer);
+
+        GetWorldTimerManager().SetTimer(
+            HideWidgetTimer,
+            this,
+            &AOreNode::HideHealthWidget,
+            2.0f,
+            false);
+
+
+        if (Health <= 0)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Dropping Iron Ore"));
+
+            if (DropClass)
+            {
+                AActor* Actor = GetWorld()->SpawnActor<AActor>(
+                    DropClass,
+                    GetActorLocation(),
+                    GetActorRotation()
+                );
+
+                if (Actor)
+                {
+                    Actor->Tags.Add(FName("Pickup"));
+                }
+            }
+
+            if (SpawnPoint) {
+                UE_LOG(LogTemp, Warning, TEXT("ImCalling"));
+                SpawnPoint->SpawnCall();
+            }
+            else {
+                UE_LOG(LogTemp, Warning, TEXT("NoNo"));
+            }
+
+            Destroy();
+        
     }
 }

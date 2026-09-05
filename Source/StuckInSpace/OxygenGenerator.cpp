@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "NiagaraComponent.h"
 #include "OxygenGenerator.h"
+#include "NiagaraComponent.h"
 
 AOxygenGenerator::AOxygenGenerator() {
 	SteamEffect = CreateDefaultSubobject<UNiagaraComponent>(TEXT("SteamEffect"));

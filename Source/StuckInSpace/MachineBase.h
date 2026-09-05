@@ -7,10 +7,11 @@
 #include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Blueprint/UserWidget.h"
+#include "BreakInterface.h"
 #include "MachineBase.generated.h"
 
 UCLASS()
-class STUCKINSPACE_API AMachineBase : public AActor
+class STUCKINSPACE_API AMachineBase : public AActor, public IBreakInterface
 {
 	GENERATED_BODY()
 	
@@ -39,6 +40,11 @@ public:
 
 	UPROPERTY()
 	UUserWidget* InteractionWidget;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Machine")
+	bool bCanBeBroken = true;
+
+	virtual void Damage_Implementation() override;
 
 
 	UFUNCTION()

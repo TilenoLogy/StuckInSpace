@@ -37,7 +37,7 @@ void APickableOre::Interact_Implementation() {
 	{
 		bool bAlreadyHave = false;
 		for (struct FItem& temp : Character->Inventory) {
-			if (temp.ItemName == ItemID) {
+			if (temp.ItemID == ItemID) {
 				temp.Amount++;
 				bAlreadyHave = true;
 				UE_LOG(LogTemp, Warning, TEXT("Old"));
@@ -47,7 +47,7 @@ void APickableOre::Interact_Implementation() {
 
 		if (!bAlreadyHave) {
 			struct FItem temp;
-			temp.ItemName = ItemID;
+			temp.ItemID = ItemID;
 			temp.Amount++;
 			Character->Inventory.Add(temp);
 

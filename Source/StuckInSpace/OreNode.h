@@ -14,6 +14,9 @@
 #include "BreakInterface.h"
 #include "OreNode.generated.h"
 
+
+class AOreSpawnOutside;
+
 UCLASS()
 class STUCKINSPACE_API AOreNode : public AActor, public IBreakInterface
 {
@@ -29,11 +32,17 @@ protected:
 
 	FTimerHandle HideWidgetTimer;
 
+
+
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 	virtual void Damage_Implementation() override;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Spawning")
+	AOreSpawnOutside* SpawnPoint;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Ore")
 	int32 Health = 100;
@@ -46,6 +55,8 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ore")
 	int32 ToughnessLevel = 1;
+
+	
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
@@ -64,6 +75,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	UWidgetComponent* HealthWidget;
+
+	UPROPERTY(EditAnywhere, Category = "UI")
+	TSubclassOf<UUserWidget> WidgetClass;
 
 
 	UFUNCTION(BlueprintCallable, Category="Ore")

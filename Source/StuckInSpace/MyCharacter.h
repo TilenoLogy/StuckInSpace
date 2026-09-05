@@ -10,6 +10,7 @@
 
 class UInputMappingContext;
 class UInputAction;
+class AActor;
 
 
 USTRUCT(BlueprintType)
@@ -17,7 +18,7 @@ struct FItem{
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FName ItemName;
+	FName ItemID;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 Amount = 0;
@@ -44,6 +45,15 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	UFUNCTION(BlueprintCallable, Category = "Interaction")
+	void CheckLookedAtObject();
+
+	UFUNCTION(BlueprintCallable, Category = "Interaction")
+	void SetMachineHighlight(AActor* Actor, bool bHighlighted);
+
+	UFUNCTION(BlueprintCallable, Category = "Interaction")
+	void DamageLookedAtMachine();
+
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
@@ -53,6 +63,9 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Input")
 	UInputAction* LookAction;
+
+	UPROPERTY(EditAnywhere, Category = "Input")
+	UInputAction* DamageAction;
 
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
@@ -66,6 +79,40 @@ public:
 	void StopJump(const FInputActionValue& Value);
 
 
+	UPROPERTY(EditAnywhere, Category = "Input")
+	UInputAction* RunAction;
+	
+	UFUNCTION()
+	void StartRunning(const FInputActionValue& Value);
+
+	UFUNCTION()
+	void StopRunning(const FInputActionValue& Value);
+
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	float WalkSpeed = 600.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	float RunSpeed = 1000.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	float Stamina = 100.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	float MaxStamina = 100.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
+	int32 Strength = 1;
+
+	bool bIsRunning = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction")
+	float InteractionDistance = 500.f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Interaction")
+	AActor* LookedAtActor = nullptr;
+
+
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
 	float Oxygen=1.0f;
@@ -77,7 +124,10 @@ public:
 	TArray<FItem> Inventory;
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
-	void UseItem(FString ItemName);
+	void UseItem(FName ItemID, int32 Amount);
+
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void AddItem(FName ItemID, int32 Amount);
 
 
 	UFUNCTION(BlueprintCallable, Category="Oxygen")
@@ -87,6 +137,9 @@ public:
 	bool RefillOxygen();
 
 	UFUNCTION(BlueprintCallable, Category="Inventory")
-	bool FindItem(int32 Amount, FString ItemName);
+	bool FindItem(int32 Amount, FName ItemID);
+
+	UFUNCTION(BlueprintCallable, Category = "Stats")
+	void UpgradeStrength();
 
 };
