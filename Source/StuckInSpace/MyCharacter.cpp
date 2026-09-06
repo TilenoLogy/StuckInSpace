@@ -288,10 +288,16 @@ void AMyCharacter::UseItem(FName ItemID, int32 Amount) {
 }
 
 void AMyCharacter::AddItem(FName ItemID, int32 Amount) {
+	for (FItem& tmp : Inventory) {
+		if (tmp.ItemID == ItemID) {
+			tmp.Amount += Amount;
+			return;
+		}
+	}
+
 	FItem tmp;
 	tmp.ItemID = ItemID;
 	tmp.Amount = Amount;
-
 	Inventory.Add(tmp);
 }
 

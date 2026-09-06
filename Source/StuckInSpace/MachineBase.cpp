@@ -92,6 +92,7 @@ void AMachineBase::OnBoxEndOverlap(
 
 void AMachineBase::Damage_Implementation()
 {
+	
 	UE_LOG(LogTemp, Warning, TEXT("destroy"));
 	Destroy();
 }

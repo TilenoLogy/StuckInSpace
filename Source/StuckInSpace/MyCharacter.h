@@ -13,6 +13,15 @@ class UInputAction;
 class AActor;
 
 
+UENUM(BlueprintType)
+enum class EPlayerMode : uint8
+{
+	Normal,
+	Inventory,
+	Building,
+	Destruction
+};
+
 USTRUCT(BlueprintType)
 struct FItem{
 	GENERATED_BODY()
@@ -122,6 +131,8 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory")
 	TArray<FItem> Inventory;
+
+	
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void UseItem(FName ItemID, int32 Amount);
