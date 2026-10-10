@@ -3,15 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
+#include "PlaceableBase.h"
 #include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Blueprint/UserWidget.h"
-#include "BreakInterface.h"
 #include "MachineBase.generated.h"
 
 UCLASS()
-class STUCKINSPACE_API AMachineBase : public AActor, public IBreakInterface
+class STUCKINSPACE_API AMachineBase : public APlaceableBase
 {
 	GENERATED_BODY()
 	
@@ -40,12 +39,6 @@ public:
 
 	UPROPERTY()
 	UUserWidget* InteractionWidget;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Machine")
-	bool bCanBeBroken = true;
-
-	virtual void Damage_Implementation() override;
-
 
 	UFUNCTION()
 	void OnBoxBeginOverlap(

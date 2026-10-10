@@ -14,8 +14,10 @@
 #include "GameFramework/PlayerController.h"
 #include "Camera/CameraComponent.h"
 #include "BreakInterface.h"
-#include "MachineBase.h"
+#include "PlaceableBase.h"
+#include "OxygenGenerator.h"
 #include "Components/MeshComponent.h"
+#include "Components/PrimitiveComponent.h"
 
 
 // Sets default values
@@ -53,6 +55,7 @@ void AMyCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (PlayerMode == EPlayerMode::Destruction)
 	CheckLookedAtObject();
 
 	if (bIsRunning)
@@ -91,10 +94,10 @@ void AMyCharacter::CheckLookedAtObject()
 	AActor* NewTarget = nullptr;
 	if (GetWorld()->LineTraceSingleByChannel(Hit, ViewLocation, TraceEnd, ECC_Visibility, QueryParams))
 	{
-		AMachineBase* Machine = Cast<AMachineBase>(Hit.GetActor());
-		if (Machine && Machine->bCanBeBroken)
+		APlaceableBase* Placeable = Cast<APlaceableBase>(Hit.GetActor());
+		if (Placeable && Placeable->bCanBeBroken)
 		{
-			NewTarget = Machine;
+			NewTarget = Placeable;
 		}
 	}
 
@@ -143,7 +146,66 @@ void AMyCharacter::DamageLookedAtMachine()
 		return;
 	}
 
+	if (APlaceableBase* Placeable = Cast<APlaceableBase>(LookedAtActor))
+	{
+		if (!Placeable->DestroyedItemID.IsNone())
+		{
+			AddItem(Placeable->DestroyedItemID, 1);
+		}
+	}
+
 	IBreakInterface::Execute_Damage(LookedAtActor);
+	LookedAtActor = nullptr;
+}
+
+bool AMyCharacter::SnapActorToGround(AActor* Actor, float TraceDistance)
+{
+	if (!IsValid(Actor) || !Actor->GetWorld() || TraceDistance <= 0.f)
+	{
+		return false;
+	}
+
+	UMeshComponent* MeshComponent = nullptr;
+	TArray<UMeshComponent*> MeshComponents;
+	Actor->GetComponents<UMeshComponent>(MeshComponents);
+
+	for (UMeshComponent* Candidate : MeshComponents)
+	{
+		if (Candidate && Candidate->IsVisible())
+		{
+			MeshComponent = Candidate;
+			break;
+		}
+	}
+
+	if (!MeshComponent)
+	{
+		return false;
+	}
+
+	const FBoxSphereBounds Bounds = MeshComponent->Bounds;
+	const float BottomOffset =
+		(Bounds.Origin - Actor->GetActorLocation()).Z - Bounds.BoxExtent.Z;
+
+	FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(SnapActorToGround), false, Actor);
+	FHitResult GroundHit;
+	const FVector TraceStart = Bounds.Origin + FVector(0.f, 0.f, Bounds.BoxExtent.Z + 100.f);
+	const FVector TraceEnd = Bounds.Origin - FVector(0.f, 0.f, Bounds.BoxExtent.Z + TraceDistance);
+
+	if (!Actor->GetWorld()->LineTraceSingleByChannel(
+		GroundHit,
+		TraceStart,
+		TraceEnd,
+		ECC_Visibility,
+		QueryParams))
+	{
+		return false;
+	}
+
+	FVector CorrectedLocation = Actor->GetActorLocation();
+	CorrectedLocation.Z = GroundHit.ImpactPoint.Z - BottomOffset + 1.f;
+	Actor->SetActorLocation(CorrectedLocation);
+	return true;
 }
 
 void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -270,21 +332,33 @@ void AMyCharacter::UseOxygen() {
 }
 
 
-void AMyCharacter::UseItem(FName ItemID, int32 Amount) {
+bool AMyCharacter::UseItem(FName ItemID, int32 Amount) {
+	if (Amount <= 0)
+	{
+		return false;
+	}
+
 	for (int32 i = 0; i < Inventory.Num(); i++)
 	{
-		if (Inventory[i].ItemID == ItemID && Inventory[i].Amount-Amount>=0)
+		if (Inventory[i].ItemID == ItemID)
 		{
-			Inventory[i].Amount = Inventory[i].Amount-Amount;
+			if (Inventory[i].Amount < Amount)
+			{
+				return false;
+			}
+
+			Inventory[i].Amount -= Amount;
 
 			if (Inventory[i].Amount <= 0)
 			{
 				Inventory.RemoveAt(i);
 			}
 
-			break;
+			return true;
 		}
 	}
+
+	return false;
 }
 
 void AMyCharacter::AddItem(FName ItemID, int32 Amount) {
@@ -326,16 +400,13 @@ void AMyCharacter::UpgradeStrength()
 }
 
 
-bool AMyCharacter::RefillOxygen() {
-	if (FindItem(1, "Coal Chunk") && FindItem(1, "Ice Cubes")) {
-		if (Oxygen <= 0.9)
-			Oxygen += 0.1f;
-		else {
-			Oxygen = 1.0f;
-		}
-		UseItem("Coal Chunk", 1);
-		UseItem("Ice Cubes", 1);
-		return true;
-	}
-	return false;
+void AMyCharacter::AddOxygen()
+{
+	Oxygen = FMath::Min(Oxygen + 0.5f, 1.0f);
 }
+
+//bool AMyCharacter::RefillOxygenAtLookedAtGenerator()
+//{
+//	AOxygenGenerator* Generator = Cast<AOxygenGenerator>(LookedAtActor);
+//	return Generator && Generator->RefillOxygen(this);
+//}

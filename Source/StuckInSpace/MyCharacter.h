@@ -63,6 +63,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Interaction")
 	void DamageLookedAtMachine();
 
+	UFUNCTION(BlueprintCallable, Category = "Placement")
+	static bool SnapActorToGround(AActor* Actor, float TraceDistance = 1000.f);
+
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
@@ -132,10 +135,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory")
 	TArray<FItem> Inventory;
 
-	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Modes")
+	EPlayerMode PlayerMode = EPlayerMode::Normal;
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
-	void UseItem(FName ItemID, int32 Amount);
+	bool UseItem(FName ItemID, int32 Amount);
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void AddItem(FName ItemID, int32 Amount);
@@ -145,7 +149,10 @@ public:
 	void UseOxygen();
 
 	UFUNCTION(BlueprintCallable, Category="Oxygen")
-	bool RefillOxygen();
+	void AddOxygen();
+
+	//UFUNCTION(BlueprintCallable, Category="Oxygen")
+	//bool RefillOxygenAtLookedAtGenerator();
 
 	UFUNCTION(BlueprintCallable, Category="Inventory")
 	bool FindItem(int32 Amount, FName ItemID);

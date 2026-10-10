@@ -89,10 +89,3 @@ void AMachineBase::OnBoxEndOverlap(
 		InteractionWidget->SetVisibility(ESlateVisibility::Hidden);
 	}
 }
-
-void AMachineBase::Damage_Implementation()
-{
-	
-	UE_LOG(LogTemp, Warning, TEXT("destroy"));
-	Destroy();
-}

@@ -6,6 +6,14 @@
 #include "Engine/DataTable.h"
 #include "ItemData.generated.h"
 
+UENUM(BlueprintType)
+enum class EItemType : uint8
+{
+    Building UMETA(DisplayName = "Building"),
+    Wire UMETA(DisplayName = "Wire"),
+    Pickupable UMETA(DisplayName = "Pickupable")
+};
+
 /**
  * 
  */
@@ -27,6 +35,9 @@ struct FItemData : public FTableRowBase
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     TSubclassOf<AActor> PlaceableClass;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    EItemType TypeOfPlacable;
 };
 
 
