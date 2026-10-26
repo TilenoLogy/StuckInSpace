@@ -41,6 +41,9 @@ public:
 
 	virtual void Damage_Implementation() override;
 
+	UFUNCTION(BlueprintCallable, Category = "Ore")
+	bool ApplyMiningDamage(int32 ToolTier, int32 DamageAmount);
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Spawning")
 	AOreSpawnOutside* SpawnPoint;
 

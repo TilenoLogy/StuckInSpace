@@ -1,6 +1,8 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "MyCharacter.h"
+#include "ItemData.h"
+#include "Engine/DataTable.h"
 
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
@@ -56,9 +58,18 @@ void AMyCharacter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	if (PlayerMode == EPlayerMode::Destruction)
-	CheckLookedAtObject();
+	{
+		CheckLookedAtObject();
+	}
+	else if (LookedAtActor)
+	{
+		SetMachineHighlight(LookedAtActor, false);
+		LookedAtActor = nullptr;
+	}
 
-	if (bIsRunning)
+	const bool bIsMoving = GetVelocity().SizeSquared2D() > FMath::Square(1.f);
+
+	if (bIsRunning && bIsMoving)
 	{
 		Stamina -= 20.f * DeltaTime;
 
@@ -141,6 +152,13 @@ void AMyCharacter::SetMachineHighlight(AActor* Actor, bool bHighlighted)
 
 void AMyCharacter::DamageLookedAtMachine()
 {
+	if (PlayerMode != EPlayerMode::Destruction)
+	{
+		return;
+	}
+
+	CheckLookedAtObject();
+
 	if (!IsValid(LookedAtActor) || !LookedAtActor->Implements<UBreakInterface>())
 	{
 		return;
@@ -148,14 +166,21 @@ void AMyCharacter::DamageLookedAtMachine()
 
 	if (APlaceableBase* Placeable = Cast<APlaceableBase>(LookedAtActor))
 	{
+		if (!Placeable->bCanBeBroken)
+		{
+			return;
+		}
+
 		if (!Placeable->DestroyedItemID.IsNone())
 		{
 			AddItem(Placeable->DestroyedItemID, 1);
 		}
 	}
 
-	IBreakInterface::Execute_Damage(LookedAtActor);
+	AActor* TargetToDamage = LookedAtActor;
+	SetMachineHighlight(TargetToDamage, false);
 	LookedAtActor = nullptr;
+	IBreakInterface::Execute_Damage(TargetToDamage);
 }
 
 bool AMyCharacter::SnapActorToGround(AActor* Actor, float TraceDistance)
@@ -250,6 +275,12 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 
 		EnhancedInputComponent->BindAction(
 			RunAction,
+			ETriggerEvent::Triggered,
+			this,
+			&AMyCharacter::StartRunning);
+
+		EnhancedInputComponent->BindAction(
+			RunAction,
 			ETriggerEvent::Started,
 			this,
 			&AMyCharacter::StartRunning);
@@ -305,8 +336,11 @@ void AMyCharacter::StartRunning(const FInputActionValue& Value)
 	if (Stamina > 0.f)
 	{
 		bIsRunning = true;
+		SetActorTickEnabled(true);
+		
 		UE_LOG(LogTemp, Warning, TEXT("StartRunning called"));
 		GetCharacterMovement()->MaxWalkSpeed = RunSpeed;
+		
 	}
 }
 
@@ -361,7 +395,40 @@ bool AMyCharacter::UseItem(FName ItemID, int32 Amount) {
 	return false;
 }
 
+float AMyCharacter::GetItemWeight(FName ItemID) const {
+	if (!ItemDataTable) {
+		UE_LOG(LogTemp, Warning, TEXT("DT doesn't exist"))
+		return 1.0f;
+	}
+	FString Context;
+	FItemData* Row = ItemDataTable->FindRow<FItemData>(ItemID, Context);
+	if (Row) { 
+		UE_LOG(LogTemp, Warning, TEXT("Row found"))
+		return Row->Weight; }
+	return 1.0f;
+}
+
+float AMyCharacter::GetTotalWeight() const {
+	float Total = 0.0f;
+	for (const FItem& Item : Inventory) {
+		Total += GetItemWeight(Item.ItemID) * Item.Amount;
+	}
+	return Total;
+}
+
 void AMyCharacter::AddItem(FName ItemID, int32 Amount) {
+	float ItemWeight = GetItemWeight(ItemID);
+	float NewTotalWeight = GetTotalWeight() + ItemWeight * Amount;
+	if (NewTotalWeight > MaxWeight) {
+		UE_LOG(LogTemp, Warning, TEXT("Cannot add item %s: would exceed max weight!"), *ItemID.ToString());
+		return;
+	}
+
+	if (EquipMiningTool(ItemID))
+	{
+		UE_LOG(LogTemp, Log, TEXT("Equipped mining tool: %s"), *ItemID.ToString());
+	}
+
 	for (FItem& tmp : Inventory) {
 		if (tmp.ItemID == ItemID) {
 			tmp.Amount += Amount;
@@ -373,6 +440,26 @@ void AMyCharacter::AddItem(FName ItemID, int32 Amount) {
 	tmp.ItemID = ItemID;
 	tmp.Amount = Amount;
 	Inventory.Add(tmp);
+}
+
+
+bool AMyCharacter::EquipMiningTool(FName ItemID)
+{
+	if (ItemID.IsNone())
+	{
+		return false;
+	}
+
+	for (const FMiningToolData& Tool : MiningTools)
+	{
+		if (Tool.ItemID == ItemID)
+		{
+			EquippedToolItemID = ItemID;
+			return true;
+		}
+	}
+
+	return false;
 }
 
 
@@ -394,9 +481,48 @@ bool AMyCharacter::FindItem(int32 Amount, FName ItemID) {
 	return false;
 }
 
+int32 AMyCharacter::GetItemAmount(FName ItemID) const
+{
+	for (const FItem& Item : Inventory)
+	{
+		if (Item.ItemID == ItemID)
+		{
+			return Item.Amount;
+		}
+	}
+
+	return 0;
+}
+
 void AMyCharacter::UpgradeStrength()
 {
 	Strength++;
+}
+
+int32 AMyCharacter::GetMiningToolTier() const
+{
+	for (const FMiningToolData& Tool : MiningTools)
+	{
+		if (Tool.ItemID == EquippedToolItemID)
+		{
+			return FMath::Max(0, Tool.Tier);
+		}
+	}
+
+	return FMath::Max(0, Strength);
+}
+
+int32 AMyCharacter::GetMiningDamage() const
+{
+	for (const FMiningToolData& Tool : MiningTools)
+	{
+		if (Tool.ItemID == EquippedToolItemID)
+		{
+			return FMath::Max(0, Tool.Damage);
+		}
+	}
+
+	return 1;
 }
 
 

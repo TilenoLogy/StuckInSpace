@@ -12,7 +12,6 @@ class UInputMappingContext;
 class UInputAction;
 class AActor;
 
-
 UENUM(BlueprintType)
 enum class EPlayerMode : uint8
 {
@@ -23,14 +22,30 @@ enum class EPlayerMode : uint8
 };
 
 USTRUCT(BlueprintType)
-struct FItem{
+struct FItem
+{
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FName ItemID;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 Amount = 0;
+};
+
+USTRUCT(BlueprintType)
+struct FMiningToolData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FName ItemID;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 Tier = 1;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 Damage = 1;
 };
 
 UCLASS()
@@ -116,7 +131,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
 	int32 Strength = 1;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mining")
+	FName EquippedToolItemID = NAME_None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mining")
+	TArray<FMiningToolData> MiningTools;
+
 	bool bIsRunning = false;
+	float StaminaDebugTimer = 0.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction")
 	float InteractionDistance = 500.f;
@@ -138,11 +160,18 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Modes")
 	EPlayerMode PlayerMode = EPlayerMode::Normal;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory")
+	int32 MaxWeight = 100;
+
+
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	bool UseItem(FName ItemID, int32 Amount);
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void AddItem(FName ItemID, int32 Amount);
+
+	UFUNCTION(BlueprintCallable, Category = "Mining")
+	bool EquipMiningTool(FName ItemID);
 
 
 	UFUNCTION(BlueprintCallable, Category="Oxygen")
@@ -157,7 +186,25 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Inventory")
 	bool FindItem(int32 Amount, FName ItemID);
 
+	UFUNCTION(BlueprintCallable, Category="Inventory")
+	int32 GetItemAmount(FName ItemID) const;
+
 	UFUNCTION(BlueprintCallable, Category = "Stats")
 	void UpgradeStrength();
 
+	UFUNCTION(BlueprintCallable, Category = "Mining")
+	int32 GetMiningToolTier() const;
+
+	UFUNCTION(BlueprintCallable, Category = "Mining")
+	int32 GetMiningDamage() const;
+
+	// Returns the total weight of all items in the inventory
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	float GetTotalWeight() const;
+	// Returns the weight of a specific item
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	float GetItemWeight(FName ItemID) const;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory")
+	UDataTable* ItemDataTable;
 };

@@ -44,6 +44,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Battery|UI")
 	FVector BatteryWidgetOffset = FVector(0.f, 0.f, 150.f);
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Battery|UI")
+	float WidgetVisibleDistance = 1000.f;
+
 	UFUNCTION(BlueprintCallable, Category = "Battery")
 	float AddEnergy(float Energy);
 

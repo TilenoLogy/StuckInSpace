@@ -7,6 +7,8 @@
 #include "NiagaraComponent.h"
 #include "OxygenGenerator.generated.h"
 
+class AMyCharacter;
+
 /**
  * 
  */
@@ -25,4 +27,7 @@ public:
 public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	UNiagaraComponent* SteamEffect;
+
+	UFUNCTION(BlueprintCallable)
+	bool RefillOxygen(AMyCharacter* Character);
 };

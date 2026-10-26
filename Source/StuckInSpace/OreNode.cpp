@@ -80,12 +80,12 @@ void AOreNode::Damage_Implementation()
 
     AMyCharacter* MyCharacter = Cast<AMyCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 
-    if (MyCharacter && ToughnessLevel <= MyCharacter->Strength) {
-
-        Health--;
-
+    if (MyCharacter)
+    {
+        ApplyMiningDamage(MyCharacter->GetMiningToolTier(), MyCharacter->GetMiningDamage());
     }
-    else {
+    else
+    {
         UE_LOG(LogTemp, Warning, TEXT("Unable to break"));
 
         // If a widget class was assigned, create a temporary widget to notify the player
@@ -165,4 +165,16 @@ void AOreNode::Damage_Implementation()
             Destroy();
         
     }
+}
+
+bool AOreNode::ApplyMiningDamage(int32 ToolTier, int32 DamageAmount)
+{
+    if (ToolTier < ToughnessLevel || DamageAmount <= 0 || Health <= 0)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Unable to break ore. Tool tier: %d, required: %d"), ToolTier, ToughnessLevel);
+        return false;
+    }
+
+    Health = FMath::Max(0, Health - DamageAmount);
+    return true;
 }

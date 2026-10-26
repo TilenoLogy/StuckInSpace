@@ -38,13 +38,11 @@ struct FItemData : public FTableRowBase
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     EItemType TypeOfPlacable;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    float Weight = 1.0f; // Default weight per item
 };
 
 
 
-class STUCKINSPACE_API ItemData
-{
-public:
-	ItemData();
-	~ItemData();
-};
+

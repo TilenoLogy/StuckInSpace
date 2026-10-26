@@ -27,7 +27,7 @@ void ABatteryBase::BeginPlay()
 	if (BatteryWidget)
 	{
 		BatteryWidget->SetRelativeLocation(BatteryWidgetOffset);
-		BatteryWidget->SetVisibility(true);
+		BatteryWidget->SetVisibility(false);
 
 		if (BatteryWidgetClass)
 		{
@@ -68,6 +68,12 @@ void ABatteryBase::Tick(float DeltaTime)
 
 	if (BatteryWidget)
 	{
+		AMyCharacter* Character = Cast<AMyCharacter>(GetWorld()->GetFirstPlayerController()->GetPawn());
+		const bool bIsPlayerNearby = Character &&
+			FVector::DistSquared(GetActorLocation(), Character->GetActorLocation()) <=
+			FMath::Square(FMath::Max(0.f, WidgetVisibleDistance));
+		BatteryWidget->SetVisibility(bIsPlayerNearby);
+
 		UHealthBar* Widget = Cast<UHealthBar>(BatteryWidget->GetUserWidgetObject());
 		if (Widget)
 		{
