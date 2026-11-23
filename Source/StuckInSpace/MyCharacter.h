@@ -11,6 +11,7 @@
 class UInputMappingContext;
 class UInputAction;
 class AActor;
+class UDamageOverlayWidget;
 
 UENUM(BlueprintType)
 enum class EPlayerMode : uint8
@@ -149,10 +150,28 @@ public:
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
-	float Oxygen=1.0f;
+	float Oxygen=100.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
+	float MaxOxygen = 100.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats", meta = (ClampMin = "0.0"))
+	float CurrentDrainRate = 5.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
 	bool bSaveZone = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Damage Overlay")
+	TSubclassOf<UDamageOverlayWidget> DamageOverlayWidgetClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage Overlay", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float MaxDamageOverlayOpacity = 0.6f;
+
+	UPROPERTY(Transient, BlueprintReadOnly, Category = "Damage Overlay")
+	UDamageOverlayWidget* DamageOverlayWidget = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Oxygen Blur", meta = (ClampMin = "0.0", ClampMax = "0.02"))
+	float BlurStrength = 0.015f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory")
 	TArray<FItem> Inventory;
@@ -162,6 +181,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory")
 	int32 MaxWeight = 100;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Oxygen")
+	FName CurrentTankID = "OxygenTank1";
 
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
@@ -179,6 +201,15 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category="Oxygen")
 	void AddOxygen();
+
+	UFUNCTION(BlueprintCallable, Category = "Damage Overlay")
+	void UpdateDamageOverlay();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Oxygen")
+	void OnOxygenChanged(float OxygenRatio, float CurrentBlurStrength);
+
+	UFUNCTION(BlueprintCallable, Category = "Oxygen")
+	bool UpgradeOxygenTank();
 
 	//UFUNCTION(BlueprintCallable, Category="Oxygen")
 	//bool RefillOxygenAtLookedAtGenerator();
@@ -207,4 +238,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory")
 	UDataTable* ItemDataTable;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Oxygen")
+	UDataTable* OxygenTanksDataTable;
 };

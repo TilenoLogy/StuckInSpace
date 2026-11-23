@@ -18,6 +18,9 @@
 #include "BreakInterface.h"
 #include "PlaceableBase.h"
 #include "OxygenGenerator.h"
+#include "OxygenTankData.h"
+#include "DamageOverlayWidget.h"
+#include "Kismet/GameplayStatics.h"
 #include "Components/MeshComponent.h"
 #include "Components/PrimitiveComponent.h"
 
@@ -34,6 +37,18 @@ AMyCharacter::AMyCharacter()
 void AMyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (DamageOverlayWidgetClass)
+	{
+		DamageOverlayWidget = CreateWidget<UDamageOverlayWidget>(GetWorld(), DamageOverlayWidgetClass);
+		if (DamageOverlayWidget)
+		{
+			DamageOverlayWidget->AddToViewport();
+			UpdateDamageOverlay();
+		}
+	}
+
+	UpdateDamageOverlay();
 	
 	if (APlayerController* PC =
 		Cast<APlayerController>(GetController()))
@@ -356,12 +371,20 @@ void AMyCharacter::StopRunning(const FInputActionValue& Value)
 void AMyCharacter::UseOxygen() {
 	UE_LOG(LogTemp, Warning, TEXT("aUCH"));
 	if (!bSaveZone && Oxygen > 0.0f) {
-		UE_LOG(LogTemp, Warning, TEXT("ReaLaUCH"));
-		Oxygen -= 0.1f;
+		Oxygen = FMath::Max(0.0f, Oxygen - CurrentDrainRate);
+		UE_LOG(LogTemp, Warning, TEXT("Oxygen remaining: %.2f"), Oxygen);
+		UpdateDamageOverlay();
+
 	}
 
 	if (Oxygen <= 0) {
 		UE_LOG(LogTemp, Warning, TEXT("You Died"));
+
+		const FString CurrentLevelName = UGameplayStatics::GetCurrentLevelName(this, true);
+		if (!CurrentLevelName.IsEmpty())
+		{
+			UGameplayStatics::OpenLevel(this, FName(*CurrentLevelName));
+		}
 	}
 }
 
@@ -417,6 +440,13 @@ float AMyCharacter::GetTotalWeight() const {
 }
 
 void AMyCharacter::AddItem(FName ItemID, int32 Amount) {
+	if (ItemID.IsNone() || Amount <= 0)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Cannot add item: invalid ItemID or amount (ItemID=%s, Amount=%d)"),
+			*ItemID.ToString(), Amount);
+		return;
+	}
+
 	float ItemWeight = GetItemWeight(ItemID);
 	float NewTotalWeight = GetTotalWeight() + ItemWeight * Amount;
 	if (NewTotalWeight > MaxWeight) {
@@ -427,6 +457,18 @@ void AMyCharacter::AddItem(FName ItemID, int32 Amount) {
 	if (EquipMiningTool(ItemID))
 	{
 		UE_LOG(LogTemp, Log, TEXT("Equipped mining tool: %s"), *ItemID.ToString());
+	}
+
+	if (ItemDataTable)
+	{
+		FString Context;
+		if (const FItemData* ItemRow = ItemDataTable->FindRow<FItemData>(ItemID, Context))
+		{
+			if (ItemRow->Category == FName(TEXT("Tank")))
+			{
+				UpgradeOxygenTank();
+			}
+		}
 	}
 
 	for (FItem& tmp : Inventory) {
@@ -528,7 +570,66 @@ int32 AMyCharacter::GetMiningDamage() const
 
 void AMyCharacter::AddOxygen()
 {
-	Oxygen = FMath::Min(Oxygen + 0.5f, 1.0f);
+	Oxygen = FMath::Min(Oxygen + 0.5f, MaxOxygen);
+	UpdateDamageOverlay();
+}
+
+void AMyCharacter::UpdateDamageOverlay()
+{
+	const float OxygenRatio = MaxOxygen > 0.0f
+		? FMath::Clamp(Oxygen / MaxOxygen, 0.0f, 1.0f)
+		: 0.0f;
+	const float MissingOxygenRatio = 1.0f - OxygenRatio;
+	if (DamageOverlayWidget)
+	{
+		DamageOverlayWidget->SetDamageOpacity(MissingOxygenRatio * MaxDamageOverlayOpacity);
+	}
+
+	if (MissingOxygenRatio > 0.5f) {
+		const float CurrentBlurStrength = (MissingOxygenRatio-0.5f) * BlurStrength;
+		OnOxygenChanged(OxygenRatio, CurrentBlurStrength);
+	}
+}
+
+bool AMyCharacter::UpgradeOxygenTank()
+{
+	if (!OxygenTanksDataTable)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Oxygen tanks data table is not set."));
+		return false;
+	}
+
+	const FString CurrentTankString = CurrentTankID.ToString();
+	const FString Prefix = TEXT("OxygenTank");
+	if (!CurrentTankString.StartsWith(Prefix))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Invalid current oxygen tank ID: %s"), *CurrentTankID.ToString());
+		return false;
+	}
+
+	const int32 CurrentTankNumber = FCString::Atoi(*CurrentTankString.RightChop(Prefix.Len()));
+	if (CurrentTankNumber <= 0)
+	{
+		return false;
+	}
+
+	const FName NextTankID(*FString::Printf(TEXT("%s%d"), *Prefix, CurrentTankNumber + 1));
+	FString Context;
+	const FOxygenTankData* NextTank = OxygenTanksDataTable->FindRow<FOxygenTankData>(NextTankID, Context);
+	if (!NextTank)
+	{
+		UE_LOG(LogTemp, Log, TEXT("No oxygen tank upgrade found for %s."), *CurrentTankID.ToString());
+		return false;
+	}
+
+	CurrentTankID = NextTank->TankID.IsNone() ? NextTankID : NextTank->TankID;
+	MaxOxygen = NextTank->OxygenCapacity;
+	CurrentDrainRate = NextTank->DrainRate;
+	Oxygen = FMath::Min(Oxygen, MaxOxygen);
+
+	UE_LOG(LogTemp, Log, TEXT("Upgraded oxygen tank to %s. Max oxygen: %.2f, drain rate: %.2f"),
+		*CurrentTankID.ToString(), MaxOxygen, CurrentDrainRate);
+	return true;
 }
 
 //bool AMyCharacter::RefillOxygenAtLookedAtGenerator()
