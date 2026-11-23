@@ -11,7 +11,8 @@ enum class EItemType : uint8
 {
     Building UMETA(DisplayName = "Building"),
     Wire UMETA(DisplayName = "Wire"),
-    Pickupable UMETA(DisplayName = "Pickupable")
+    Pickupable UMETA(DisplayName = "Pickupable"),
+    Miner UMETA(DisplayName = "Miner")
 };
 
 /**
@@ -29,6 +30,9 @@ struct FItemData : public FTableRowBase
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     FName ItemName;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FName Category;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     UTexture2D* Icon;

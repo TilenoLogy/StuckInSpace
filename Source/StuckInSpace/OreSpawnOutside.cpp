@@ -31,6 +31,12 @@ void AOreSpawnOutside::Tick(float DeltaTime)
 
 
 void AOreSpawnOutside::SpawnCall() {
+	if (!bEnableOreSpawning)
+	{
+		GetWorldTimerManager().ClearTimer(RespawnTimer);
+		return;
+	}
+
 	GetWorldTimerManager().SetTimer(
 		RespawnTimer,
 		this,
@@ -40,6 +46,12 @@ void AOreSpawnOutside::SpawnCall() {
 }
 
 void AOreSpawnOutside::SpawnOre() {
+	if (!bEnableOreSpawning)
+	{
+		GetWorldTimerManager().ClearTimer(RespawnTimer);
+		return;
+	}
+
 	UE_LOG(LogTemp, Warning, TEXT("TrySpawning"));
 	TArray<AActor*> Actors;
 	CollisionBox->GetOverlappingActors(Actors);

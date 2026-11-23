@@ -26,8 +26,11 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	UBoxComponent* CollisionBox;
 	
-	UPROPERTY(EditAnywhere, Category="Ore")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Ore")
 	TSubclassOf<AOreNode> Ore;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ore")
+	bool bEnableOreSpawning = true;
 
 
 	FTimerHandle RespawnTimer;

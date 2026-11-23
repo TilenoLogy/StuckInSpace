@@ -16,7 +16,7 @@ class STUCKINSPACE_API UGameInstanceData : public UGameInstance
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
-	float Oxygen=1.0f;
+	float Oxygen=100.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
 	bool bSaveZone=true;
