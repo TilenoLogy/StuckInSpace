@@ -71,6 +71,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Drops")
 	TSubclassOf<AActor> DropClass;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Drops")
+	FName DropItemID = NAME_None;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	UNiagaraComponent* Chips;
 

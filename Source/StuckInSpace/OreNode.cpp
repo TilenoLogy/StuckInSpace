@@ -5,6 +5,7 @@
 #include "OreSpawnOutside.h"
 #include "Blueprint/UserWidget.h"
 #include "MyCharacter.h"
+#include "PickableOre.h"
 
 // Sets default values
 AOreNode::AOreNode()
@@ -150,6 +151,22 @@ void AOreNode::Damage_Implementation()
 
                 if (Actor)
                 {
+                        // SpawnActor only copies the class defaults.  The pickup's
+                        // ItemID therefore stayed None unless it was explicitly
+                        // initialized here.
+                        if (APickableOre* Pickup = Cast<APickableOre>(Actor))
+                        {
+                            // Preserve an ItemID configured on the pickup Blueprint.
+                            // Only initialize it from the ore node when the pickup
+                            // itself has no ID.
+                            if (Pickup->ItemID.IsNone())
+                            {
+                                Pickup->ItemID = !DropItemID.IsNone() ? DropItemID : NodeName;
+                            }
+
+                            UE_LOG(LogTemp, Log, TEXT("Spawned ore pickup with ItemID %s"),
+                                *Pickup->ItemID.ToString());
+                        }
                     Actor->Tags.Add(FName("Pickup"));
                 }
             }
