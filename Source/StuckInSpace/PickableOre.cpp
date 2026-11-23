@@ -33,26 +33,16 @@ void APickableOre::Tick(float DeltaTime)
 void APickableOre::Interact_Implementation() {
 	AMyCharacter* Character = Cast<AMyCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 
-	if (Character)
+	if (Character && !ItemID.IsNone())
 	{
-		bool bAlreadyHave = false;
-		for (struct FItem& temp : Character->Inventory) {
-			if (temp.ItemID == ItemID) {
-				temp.Amount++;
-				bAlreadyHave = true;
-				UE_LOG(LogTemp, Warning, TEXT("Old"));
-				break;
-			}
-		}
-
-		if (!bAlreadyHave) {
-			struct FItem temp;
-			temp.ItemID = ItemID;
-			temp.Amount++;
-			Character->Inventory.Add(temp);
-
-			UE_LOG(LogTemp, Warning, TEXT("New"));
-		}
+		// Use the character's inventory entry point so weight and item-table
+		// handling are consistent with miner collection and other pickups.
+		Character->AddItem(ItemID, 1);
+		UE_LOG(LogTemp, Log, TEXT("Collected pickup %s"), *ItemID.ToString());
 		this->Destroy();
+	}
+	else if (ItemID.IsNone())
+	{
+		UE_LOG(LogTemp, Error, TEXT("Cannot collect %s: ItemID is None"), *GetName());
 	}
 }
