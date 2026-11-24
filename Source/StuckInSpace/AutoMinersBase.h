@@ -3,15 +3,16 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
+#include "PlaceableBase.h"
 #include "TimerManager.h"
 #include "AutoMinersBase.generated.h"
 
 class AMyCharacter;
+class AOreSpawnOutside;
 class UStaticMeshComponent;
 
 UCLASS()
-class STUCKINSPACE_API AAutoMinersBase : public AActor
+class STUCKINSPACE_API AAutoMinersBase : public APlaceableBase
 {
 	GENERATED_BODY()
 	
@@ -22,13 +23,19 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Miner")
 	UStaticMeshComponent* MinerMesh;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawning")
+	AOreSpawnOutside* SpawnPoint = nullptr;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	bool bNeedsGroundSnap = true;
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+	virtual void Damage_Implementation() override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Miner")
 	FName OreItemID;

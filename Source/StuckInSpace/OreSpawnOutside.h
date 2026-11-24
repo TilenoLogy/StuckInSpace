@@ -44,4 +44,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Spawning")
 	void SpawnCall();
+
+	UFUNCTION(BlueprintCallable, Category = "Spawning")
+	void EnableOreSpawning();
 };

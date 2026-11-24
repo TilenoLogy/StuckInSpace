@@ -228,16 +228,38 @@ bool AMyCharacter::SnapActorToGround(AActor* Actor, float TraceDistance)
 		(Bounds.Origin - Actor->GetActorLocation()).Z - Bounds.BoxExtent.Z;
 
 	FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(SnapActorToGround), false, Actor);
-	FHitResult GroundHit;
+	TArray<FHitResult> GroundHits;
 	const FVector TraceStart = Bounds.Origin + FVector(0.f, 0.f, Bounds.BoxExtent.Z + 100.f);
 	const FVector TraceEnd = Bounds.Origin - FVector(0.f, 0.f, Bounds.BoxExtent.Z + TraceDistance);
 
-	if (!Actor->GetWorld()->LineTraceSingleByChannel(
-		GroundHit,
+	if (!Actor->GetWorld()->LineTraceMultiByChannel(
+		GroundHits,
 		TraceStart,
 		TraceEnd,
 		ECC_Visibility,
 		QueryParams))
+	{
+		return false;
+	}
+
+	FHitResult GroundHit;
+	bool bFoundGround = false;
+	for (const FHitResult& Hit : GroundHits)
+	{
+		if (const AActor* HitActor = Hit.GetActor(); HitActor && HitActor->IsActorBeingDestroyed())
+		{
+			continue;
+		}
+
+		if (Hit.ImpactNormal.Z >= 0.7f)
+		{
+			GroundHit = Hit;
+			bFoundGround = true;
+			break;
+		}
+	}
+
+	if (!bFoundGround)
 	{
 		return false;
 	}

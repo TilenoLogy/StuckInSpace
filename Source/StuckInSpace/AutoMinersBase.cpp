@@ -3,6 +3,7 @@
 
 #include "AutoMinersBase.h"
 #include "MyCharacter.h"
+#include "OreSpawnOutside.h"
 #include "Components/StaticMeshComponent.h"
 
 // Sets default values
@@ -13,6 +14,7 @@ AAutoMinersBase::AAutoMinersBase()
 
 	MinerMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MinerMesh"));
 	RootComponent = MinerMesh;
+	DestroyedItemID = FName(TEXT("Miner"));
 
 }
 
@@ -27,6 +29,23 @@ void AAutoMinersBase::BeginPlay()
 void AAutoMinersBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (bNeedsGroundSnap)
+	{
+		bNeedsGroundSnap = false;
+		AMyCharacter::SnapActorToGround(this);
+	}
+}
+
+void AAutoMinersBase::Damage_Implementation()
+{
+	if (SpawnPoint)
+	{
+		SpawnPoint->EnableOreSpawning();
+		SpawnPoint->SpawnCall();
+	}
+
+	Super::Damage_Implementation();
 
 }
 

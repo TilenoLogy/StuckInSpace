@@ -45,6 +45,13 @@ void AOreSpawnOutside::SpawnCall() {
 		false);
 }
 
+void AOreSpawnOutside::EnableOreSpawning()
+{
+	bEnableOreSpawning = true;
+}
+
+
+
 void AOreSpawnOutside::SpawnOre() {
 	if (!bEnableOreSpawning)
 	{
