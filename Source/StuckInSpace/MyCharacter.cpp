@@ -496,6 +496,7 @@ void AMyCharacter::AddItem(FName ItemID, int32 Amount) {
 	for (FItem& tmp : Inventory) {
 		if (tmp.ItemID == ItemID) {
 			tmp.Amount += Amount;
+			OnInventoryChanged();
 			return;
 		}
 	}
@@ -504,6 +505,7 @@ void AMyCharacter::AddItem(FName ItemID, int32 Amount) {
 	tmp.ItemID = ItemID;
 	tmp.Amount = Amount;
 	Inventory.Add(tmp);
+	OnInventoryChanged();
 }
 
 

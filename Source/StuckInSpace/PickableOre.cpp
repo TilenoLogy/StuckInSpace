@@ -45,4 +45,5 @@ void APickableOre::Interact_Implementation() {
 	{
 		UE_LOG(LogTemp, Error, TEXT("Cannot collect %s: ItemID is None"), *GetName());
 	}
+
 }

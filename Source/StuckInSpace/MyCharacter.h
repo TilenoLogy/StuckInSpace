@@ -192,6 +192,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void AddItem(FName ItemID, int32 Amount);
 
+	UFUNCTION(BlueprintImplementableEvent, Category = "Inventory")
+	void OnInventoryChanged();
+
 	UFUNCTION(BlueprintCallable, Category = "Mining")
 	bool EquipMiningTool(FName ItemID);
 
